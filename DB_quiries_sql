@@ -1,0 +1,140 @@
+-- AddBooking
+DELIMITER //
+CREATE PROCEDURE AddBooking (bookingID INT , bookingDate DATE, tableNum INT, customerID INT, staffID INT)
+BEGIN
+INSERT INTO bookings(BookingID, BookingDate, TableNo, CustomerID, StaffID) values
+	(bookingID, bookingDate, TableNum, customerID, staffID);
+SELECT CONCAT('New Booking Added') AS Confirmation;
+
+END //
+
+DELIMITER ;
+
+CALL AddBooking(9, "2022-12-30", 4, 3, 5);
+
+
+-- AddValid Booking
+DROP PROCEDURE IF EXISTS AddValidBooking;
+DELIMITER //
+CREATE PROCEDURE AddValidBooking (IN Booking_Date DATE, IN TableNum INT)
+BEGIN
+START TRANSACTION;
+SELECT BookingID INTO @id FROM Bookings ORDER BY BookingID DESC LIMIT 1;
+SET @id = @id + 1;
+SELECT BookingDate INTO Booking_Date FROM bookings WHERE BookingDate = Booking_Date LIMIT 1;
+SELECT TableNo INTO TableNum FROM bookings WHERE TableNo = TableNum LIMIT 1;
+INSERT INTO bookings(BookingID, BookingDate, TableNo, CustomerID, StaffID) values
+	(@id, Booking_date, TableNum, null, null);
+    SELECT CONCAT('Booking Successful');
+    IF TableNum = null THEN COMMIT;
+    ELSE ROLLBACK;
+    SELECT CONCAT("Table ", TableNum, " is already booked - booking cancelled") AS BookingStatus;
+    END IF;
+END //
+
+DELIMITER ;
+
+CALL AddValidBooking("2022-12-17", 6);
+
+
+-- cancel Booking
+DROP PROCEDURE IF EXISTS CancelBooking;
+DELIMITER //
+CREATE PROCEDURE CancelBooking (IN BookingIDInput INT)
+	BEGIN
+	DELETE FROM bookings WHERE BookingID = BookingIDInput;
+	SELECT CONCAT("Booking", (BookingIDInput), " is cancelled") AS Confimation;
+
+    END //
+DELIMITER ;
+call CancelBooking(9);
+
+
+-- Cancel Orders
+DROP PROCEDURE IF EXISTS CancelOrder;
+DELIMITER //
+CREATE PROCEDURE CancelOrder (IN OrderIDInput INT)
+	BEGIN
+	DELETE FROM orders WHERE OrderID = OrderIDInput;
+	SELECT CONCAT("Order", (OrderIDInput), " is cancelled") AS Confimation;
+
+    END //
+DELIMITER ;
+call CancelOrder(5);
+
+
+-- CheckBookings Procedure
+DROP PROCEDURE IF EXISTS CheckBooking;
+
+CREATE PROCEDURE CheckBooking (IN Booking_Date DATE, IN TableNumber INT)
+	SELECT CONCAT("Table", (TableNumber), " is already booked") AS 'Booking Status'  WHERE EXISTS 
+    (SELECT * FROM bookings WHERE bookings.BookingDate = Booking_Date AND bookings.TableNo = TableNumber);
+call CheckBooking("2022-11-12", 3);
+
+
+-- Get Maximum Quantity 
+CREATE PROCEDURE GetMaxQuantity()
+SELECT max(Quantity) AS 'Max Quantity in Order'
+FROM Orders;
+
+CALL GetMaxQuantity()
+
+
+-- GetOrderDetail Prepared Statement
+PREPARE GetOrderDetail FROM
+'SELECT OrderID, Quantity, TotalCost
+FROM orders
+WHERE OrderID = ?';
+
+SET @OrderID = 1;
+EXECUTE GetOrderDetail USING @OrderID;
+
+
+
+-- Join Tables
+SELECT c.CustomerID, 
+CONCAT(c.CustomerFirstName, ' ', c.CustomerLastName ) AS CustomerFullName,
+o.OrderID, o.TotalCost, m.Cuisine AS MenuName, i.ItemName, i.ItemType
+FROM customers AS c, bookings AS b, orders AS o, menus as m, menuitems as i
+WHERE c.CustomerID = b.CustomerID
+AND b.BookingID = o.BookingID
+AND o.MenuID = m.MenuID
+AND m.MenuItemID = i.MenuItemID
+AND i.ItemType != 'Dessert'
+AND i.ItemType != 'Drink'
+AND o.TotalCost > 150 order by o.TotalCost ASC;
+
+
+-- Virtual Table
+CREATE VIEW OrdersView AS
+SELECT OrderID, Quantity, TotalCost
+FROM orders
+WHERE Quantity >=2;
+
+Select * from OrdersView;
+
+
+-- Subquery
+-- Finding all menu items that has been place more then 2 times
+-- Item Name is silmilar to MenuNames so I selected the item name from the items table
+SELECT ItemName FROM menuitems 
+WHERE MenuItemID = ANY (SELECT Quantity FROM orders WHERE Quantity > 2);
+
+
+-- UpdateBooking
+DROP PROCEDURE IF EXISTS UpdateBooking;
+SET SQL_SAFE_UPDATES=0;
+DELIMITER //
+CREATE PROCEDURE UpdateBooking (IN bookingID INT, IN bookingDate DATE)
+BEGIN
+	SELECT BookingID INTO bookingID FROM Bookings WHERE BookingID = bookingID LIMIT 1;
+    SELECT BookingDate INTO bookingDate FROM Bookings WHERE BookingDate = bookingDate LIMIT 1;
+	UPDATE bookings
+    SET BookingDate = bookingDate
+    WHERE BookingID = bookingID;
+    SELECT CONCAT ('Booking ', bookingID, ' updated') AS Confirmation;
+
+END // 
+
+CALL UpdateBooking (9, "2022-12-20")
+
