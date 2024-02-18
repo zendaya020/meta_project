@@ -1,0 +1,16 @@
+TYPE=VIEW
+query=select `littlelemondb`.`orders`.`OrderID` AS `OrderID`,`littlelemondb`.`orders`.`Quantity` AS `Quantity`,`littlelemondb`.`orders`.`TotalCost` AS `TotalCost` from `littlelemondb`.`orders` where `littlelemondb`.`orders`.`Quantity` > 2
+md5=c20493d4b0c9770df83b5e8d228a1151
+updatable=1
+algorithm=0
+definer_user=root
+definer_host=localhost
+suid=2
+with_check_option=0
+timestamp=0001708081514120616
+create-version=2
+source=SELECT OrderID, Quantity, TotalCost\nFROM Orders\nWHERE Quantity > 2
+client_cs_name=utf8mb4
+connection_cl_name=utf8mb4_general_ci
+view_body_utf8=select `littlelemondb`.`orders`.`OrderID` AS `OrderID`,`littlelemondb`.`orders`.`Quantity` AS `Quantity`,`littlelemondb`.`orders`.`TotalCost` AS `TotalCost` from `littlelemondb`.`orders` where `littlelemondb`.`orders`.`Quantity` > 2
+mariadb-version=110300
